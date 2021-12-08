@@ -36,5 +36,5 @@ m_file=./dat/multiple_res.txt
 // Format: <start,stop,step>
 K_range=2048,6144,2048
 Kp_range=128,512,128
-WS_range=32,32,32
+WS_range=32,128,32
 w_range=6,6,1
