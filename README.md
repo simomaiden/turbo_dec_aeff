@@ -11,9 +11,9 @@
 	del /f .\bin\main.exe
 	del /f /s .\obj\*.o
 ```
-- Run ```mingw32-make.exe``` in the main directory
+- Run ```mingw32-make.exe``` in the project directory
 - Run ```.\bin\main.exe .\dat\input_data.txt```
-- Clean: run ```mingw32-make.exe clean``` in the main directory
+- Clean: run ```mingw32-make.exe clean``` in the project directory
 
 ### Linux:
 - Comment the Windows commands and uncomment the Linux ones in the makefile
@@ -24,7 +24,7 @@
 #	del /f .\bin\main.exe
 #	del /f /s .\obj\*.o
 ```
-- Run ```make``` in the main directory
+- Run ```make``` in the project directory
 - Run ```./bin/main ./dat/input_data.txt```
-- Clean: run ```make clean``` in the main directory
+- Clean: run ```make clean``` in the project directory
 
