@@ -11,6 +11,7 @@
 	del /f .\bin\main.exe
 	del /f /s .\obj\*.o
 ```
+- If not present, create the directories ```.\obj\``` and ```.\bin\``` in the project directory
 - Run ```mingw32-make.exe``` in the project directory
 - Run ```.\bin\main.exe .\dat\input_data.txt```
 - Clean: run ```mingw32-make.exe clean``` in the project directory
@@ -24,6 +25,7 @@
 #	del /f .\bin\main.exe
 #	del /f /s .\obj\*.o
 ```
+- If not present, create the directories ```./obj/``` and ```./bin/``` in the project directory
 - Run ```make``` in the project directory
 - Run ```./bin/main ./dat/input_data.txt```
 - Clean: run ```make clean``` in the project directory
