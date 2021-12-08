@@ -1,0 +1,40 @@
+///SINGLE ANALYSIS
+
+///Results filename
+s_file=./dat/single_res.txt
+/// Decoding Algorithm [0] Max-Log-MAP, [1] Local-SOVA
+algorithm=0
+///Frame-Size
+K=6144
+///Sub-Frame-Size
+Kp=256
+///Window-Size
+WS=32
+///Channel LLRs bitwidth
+w=6
+///Maximum clock frequency
+f=600000000
+///Half Iterations numbers
+n_hi=12
+///Maximum available area [mm^2]
+av_area=2
+///Techonology [nm] - Available: 65nm, 28nm, 7nm
+tech=65nm
+
+///Throughput Error [%]
+th_err=10
+///Logic Area Error [%]
+log_err=20
+///Memory Area Error [%]
+mem_err=30
+
+///MULTIPLE ANALYSIS
+
+///Results filename
+m_file=./dat/multiple_res.txt
+
+// Format: <start,stop,step>
+K_range=2048,6144,2048
+Kp_range=128,512,128
+WS_range=32,32,32
+w_range=6,6,1
