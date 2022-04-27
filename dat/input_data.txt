@@ -2,6 +2,7 @@
 
 ///Results filename
 s_file=./dat/single_res.txt
+
 /// Decoding Algorithm [0] Max-Log-MAP, [1] Local-SOVA
 algorithm=0
 ///Frame-Size
@@ -12,21 +13,28 @@ Kp=256
 WS=32
 ///Channel LLRs bitwidth
 w=6
-///Maximum clock frequency
+
+///Radix-2 Clock Frequency (RCA logic)
 f=600000000
 ///Half Iterations numbers
 n_hi=12
 ///Maximum available area [mm^2]
-av_area=2
-///Techonology [nm] - Available: 65nm, 28nm, 7nm
+av_area=10
+///Techonology [nm] - Available: 65nm, 28nm, 7nm (28 and 7 with scaling factors)
 tech=65nm
+///Power per unit of frequency and area [W/MHz/mm^2]
+pow_per_f_area=0.0008
+///Adders Model [0] RCA, [1] CLA
+add=0
+///Forward memory reduction (re-computation) [0%-100%]
+recomp=0%
 
 ///Throughput Error [%]
 th_err=10
 ///Logic Area Error [%]
 log_err=20
 ///Memory Area Error [%]
-mem_err=30
+mem_err=20
 
 ///MULTIPLE ANALYSIS
 

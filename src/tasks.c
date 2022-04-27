@@ -25,11 +25,14 @@ void compute_radix_bitwidths(Bitwidth bitwidths[], Param *p) {
 // p: ptr to model parameters data structure
 void single_radix_analysis(ArchData arch[], Bitwidth bitwidths[], Param *p) {
     int radix_orders[4] = {2, 4, 8, 16};
+    double frequency;
     double th;
-    double log_area;
-    double mem_area;
+    double lat;
     double area;
     double aeff;
+    double power;
+    double power_density;
+    double energy_eff;
     int parallel_decoders;
     int i;
 
@@ -37,12 +40,17 @@ void single_radix_analysis(ArchData arch[], Bitwidth bitwidths[], Param *p) {
     for (i = 0; i < 4; i++) {
         p->radix = radix_orders[i];
 
+        frequency = get_frequency(&bitwidths[i], p);
         th = get_throughput(&bitwidths[i], p);
-        log_area = get_turbo_log_ge_area(&bitwidths[i], p);
-        mem_area = get_turbo_mem_ge_area(&bitwidths[i], p);
-        area = log_area + mem_area;
+        lat = get_latency(&bitwidths[i], p);
+        get_turbo_log_ge_area(&bitwidths[i], p, &arch[i].log_area);
+        get_turbo_mem_ge_area(&bitwidths[i], p, &arch[i].mem_area);
+        area = arch[i].log_area.total + arch[i].mem_area.total;
         aeff = th / area;
-        parallel_decoders = (int) floor(p->av_area / (area*p->ge_area/1e6));
+        parallel_decoders = (int) floor(p->av_area / (area));
+        power = p->pow_per_f_area * frequency * area / 1e6;
+        power_density = power / area;
+        energy_eff = power / th / area;
 
         // Saving the results in the architecture data structure
         arch[i].K = p->K;
@@ -51,13 +59,13 @@ void single_radix_analysis(ArchData arch[], Bitwidth bitwidths[], Param *p) {
         arch[i].w = p->w;
         arch[i].radix = radix_orders[i];
         arch[i].throughput = th/1e9;                                            // [Gb/s]
-        arch[i].log_area_ge = log_area;                                         // [GE]
-        arch[i].mem_area_ge = mem_area;                                         // [GE]
-        arch[i].log_area = log_area*p->ge_area/1e6;                             // [mm^2]
-        arch[i].mem_area = mem_area*p->ge_area/1e6;                             // [mm^2]
-        arch[i].total_area = arch[i].log_area + arch[i].mem_area;               // [mm^2]
-        arch[i].aeff = aeff/1e3/p->ge_area;                                     // [Gb/s/mm^2]
+        arch[i].total_area = area;                                              // [mm^2]
+        arch[i].latency = lat*1e6;                                              // [us]
+        arch[i].aeff = aeff/1e9;                                                // [Gb/s/mm^2]
         arch[i].throughput_on_area = (double) parallel_decoders * th/1e9;       // [Gb/s]
+        arch[i].power = power;                                                  // [W]
+        arch[i].power_density = power_density;                                  // [W/mm^2]
+        arch[i].energy_eff = energy_eff * 1e12;                                 // [pJ/bit/mm^2]
     }
 }
 
@@ -93,15 +101,18 @@ int get_param_array_size(int start, int stop, int step) {
 // best_arch: [ArchData] struct to store the best radix-order results
 // bitwidths: array of [Bitwidth] struct to be filled
 // p: ptr to model parameters data structure
+// SOME DATA TO BE COMPUTED ARE MISSING
 void best_radix_analysis(ArchData *best_arch, Bitwidth bitwidths[], Param *p) {
     int radix_orders[4] = {2, 4, 8, 16};
     double th;
-    double log_area;
-    double mem_area;
+    double lat;
     double area;
     int parallel_decoders;
     double aeff;
     double best_aeff = -1;
+    double frequency;
+    double power;
+    double power_density;
     int i;
 
     // Analyzing the radix orders
@@ -109,12 +120,16 @@ void best_radix_analysis(ArchData *best_arch, Bitwidth bitwidths[], Param *p) {
         p->radix = radix_orders[i];
 
         // Parameters computation
+        frequency = get_frequency(&bitwidths[i], p);
         th = get_throughput(&bitwidths[i], p);
-        log_area = get_turbo_log_ge_area(&bitwidths[i], p);
-        mem_area = get_turbo_mem_ge_area(&bitwidths[i], p);
-        area = log_area + mem_area;
-        aeff = th / area;
-        parallel_decoders = (int) floor(p->av_area / (area*p->ge_area/1e6));
+        lat = get_latency(&bitwidths[i], p);
+        get_turbo_log_ge_area(&bitwidths[i], p, &best_arch[i].log_area);
+        get_turbo_mem_ge_area(&bitwidths[i], p, &best_arch[i].mem_area);
+        area = best_arch[i].log_area.total + best_arch[i].mem_area.total;
+        aeff = th / (area);
+        parallel_decoders = (int) floor(p->av_area / (area));
+        power = p->pow_per_f_area * frequency * area / 1e6;
+        power_density = power / area;
 
         // Saving the results in the architecture data structure
         if (aeff > best_aeff) {
@@ -126,12 +141,11 @@ void best_radix_analysis(ArchData *best_arch, Bitwidth bitwidths[], Param *p) {
             best_arch->w = p->w;
             best_arch->radix = radix_orders[i];
             best_arch->throughput = th/1e9;                                         // [Gb/s]
-            best_arch->log_area_ge = log_area;                                      // [GE]
-            best_arch->mem_area_ge = mem_area;                                      // [GE]
-            best_arch->log_area = log_area*p->ge_area/1e6;                          // [mm^2]
-            best_arch->mem_area = mem_area*p->ge_area/1e6;                          // [mm^2]
-            best_arch->total_area = best_arch->log_area + best_arch->mem_area;      // [mm^2]
-            best_arch->aeff = aeff/1e3/p->ge_area;                                  // [Gb/s/mm^2]
+            best_arch->power = power;                                               // [W]
+            best_arch->power_density = power_density;                               // [W/mm^2]
+            best_arch->total_area = (area);                                       // [mm^2]
+            best_arch->latency = lat*1e6;                                         // [us]
+            best_arch->aeff = aeff/1e9;                                             // [Gb/s/mm^2]
             best_arch->throughput_on_area = (double) parallel_decoders * th/1e9;    // [Gb/s]
             best_arch->pmap_num = parallel_decoders;
         }
@@ -247,8 +261,8 @@ void reliability_radix_analysis(ReliabilityParam *rel_param, ReliabilityResult *
                     else {
                         th = get_throughput(&bitwidths[l], p);
                     }
-                    log_area = get_turbo_log_ge_area(&bitwidths[l], p) * log_err_factor;
-                    mem_area = get_turbo_mem_ge_area(&bitwidths[l], p) * mem_err_factor;
+                    log_area = get_turbo_log_ge_area(&bitwidths[l], p, NULL) * log_err_factor;
+                    mem_area = get_turbo_mem_ge_area(&bitwidths[l], p, NULL) * mem_err_factor;
                     aeff = th / (log_area + mem_area);
 
                     // Saving the results in the architecture data structure
@@ -288,10 +302,14 @@ void reliability_radix_analysis(ReliabilityParam *rel_param, ReliabilityResult *
 // bitwidths: array of [Bitwidth] struct to be filled
 // expl_p: ptr to exploration parameters data structure
 // p: ptr to model parameters data structure
-void avg_area_th_increment_factors(Bitwidth bitwidths[], ExplorationParam *expl_p, Param *p) {
+void avg_increment_factors(Bitwidth bitwidths[], ExplorationParam *expl_p, Param *p) {
     int radix_orders[4] = {2, 4, 8, 16};
+    double pow_incr_fact;
+    double min_aeff_incr[4];
+    double max_aeff_incr[4];
     double avg_th_incr[4];
     double avg_ar_incr[4];
+    double avg_pow_incr[4];
 
     // Get arrays sizes
     int N_K = get_param_array_size(expl_p->K[0], expl_p->K[1], expl_p->K[2]);
@@ -309,7 +327,13 @@ void avg_area_th_increment_factors(Bitwidth bitwidths[], ExplorationParam *expl_
     double th, th_rad2;
     double log_area;
     double mem_area;
+    double aeff, aeff_rad2;
     double area, area_rad2;
+
+    for (i = 0; i < 4; i++) {
+        min_aeff_incr[i] = 1000;
+        max_aeff_incr[i] = 0;
+    }
 
     // K loop
     for (i = 0; i < N_K; i++) {
@@ -329,17 +353,28 @@ void avg_area_th_increment_factors(Bitwidth bitwidths[], ExplorationParam *expl_
 
                         // Parameters computation
                         th = get_throughput(&bitwidths[m], p);
-                        log_area = get_turbo_log_ge_area(&bitwidths[m], p);
-                        mem_area = get_turbo_mem_ge_area(&bitwidths[m], p);
+                        log_area = get_turbo_log_ge_area(&bitwidths[m], p, NULL);
+                        mem_area = get_turbo_mem_ge_area(&bitwidths[m], p, NULL);
                         area = log_area + mem_area;
+                        aeff = th / area;
 
                         if (p->radix == 2) {
                             th_rad2 = th;
                             area_rad2 = area;
+                            aeff_rad2 = aeff;
                         }
+
+                        // Power increment factor = (freq. increment * area increment)
+                        pow_incr_fact = th/th_rad2/(m+1) * area/area_rad2;
 
                         avg_th_incr[m] += th/th_rad2;
                         avg_ar_incr[m] += area/area_rad2;
+                        avg_pow_incr[m] += pow_incr_fact;
+
+                        if (aeff/aeff_rad2 > max_aeff_incr[m])
+                            max_aeff_incr[m] = aeff/aeff_rad2;
+                        if (aeff/aeff_rad2 < min_aeff_incr[m])
+                            min_aeff_incr[m] = aeff/aeff_rad2;
                     }
                 }
             }
@@ -349,12 +384,14 @@ void avg_area_th_increment_factors(Bitwidth bitwidths[], ExplorationParam *expl_
     for (i = 0; i < 4; i++) {
         avg_th_incr[i] = avg_th_incr[i] / (N_K*N_Kp*N_WS*N_w);
         avg_ar_incr[i] = avg_ar_incr[i] / (N_K*N_Kp*N_WS*N_w);
+        avg_pow_incr[i] = avg_pow_incr[i] / (N_K*N_Kp*N_WS*N_w);
     }
 
     printf("\tRadix 2 Increment Factors\n");
-    printf("Radix\tArea\tThroughput\n");
-    printf("2\t%.4lf\t%.4lf\n", avg_ar_incr[0], avg_th_incr[0]);
-    printf("4\t%.4lf\t%.4lf\n", avg_ar_incr[1], avg_th_incr[1]);
-    printf("8\t%.4lf\t%.4lf\n", avg_ar_incr[2], avg_th_incr[2]);
-    printf("16\t%.4lf\t%.4lf\n", avg_ar_incr[3], avg_th_incr[3]);
+    printf("Radix\tArea\tTh.\tPower\tMax. Aeff\tMin. Aeff\n");
+    printf("2\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t\t%.2lf\n", avg_ar_incr[0], avg_th_incr[0], avg_pow_incr[0], max_aeff_incr[0], min_aeff_incr[0]);
+    printf("4\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t\t%.2lf\n", avg_ar_incr[1], avg_th_incr[1], avg_pow_incr[1], max_aeff_incr[1], min_aeff_incr[1]);
+    printf("8\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t\t%.2lf\n", avg_ar_incr[2], avg_th_incr[2], avg_pow_incr[2], max_aeff_incr[2], min_aeff_incr[2]);
+    printf("16\t%.2lf\t%.2lf\t%.2lf\t%.2lf\t\t%.2lf\n", avg_ar_incr[3], avg_th_incr[3], avg_pow_incr[3], max_aeff_incr[3], min_aeff_incr[3]);
+    printf("\n\n");
 }

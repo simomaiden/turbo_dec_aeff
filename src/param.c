@@ -83,8 +83,17 @@ void initialize_parameters(char filename[], Param *p, ExplorationParam *expl_p, 
                 sscanf(line, "tech=%dnm\n", &p->tech);
                 set_tech_scaling_factor(p);
             }
+            else if (strncmp(line, "add=", 4) == 0) {
+                sscanf(line, "add=%d\n", &p->add);
+            }
             else if (strncmp(line, "algorithm=", 10) == 0) {
                 sscanf(line, "algorithm=%d\n", &p->algorithm);
+            }
+            else if (strncmp(line, "recomp=", 7) == 0) {
+                sscanf(line, "recomp=%d\n", &p->recomp);
+            }
+            else if (strncmp(line, "pow_per_f_area=", 15) == 0) {
+                sscanf(line, "pow_per_f_area=%lf\n", &p->pow_per_f_area);
             }
         }
     }

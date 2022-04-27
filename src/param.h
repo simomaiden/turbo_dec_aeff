@@ -9,12 +9,16 @@ typedef struct paramStruct {
     int K;                  // Frame-Size
     int Kp;                 // Sub-Frame-Size
     int WS;                 // Window-Size
-    int f;                  // Frequency [Hz]
+    int f;                  // Radix-2 Frequency [Hz]
+    int f_max;              // Max. Frequency [Hz]
     int n_hi;               // Half-Iterations number
     int radix;              // Radix order
     int w;                  // Channel Bitwidth
     double av_area;         // Maximum available area for Decoder-level parallelism
     int tech;               // Technology [nm]
+    double pow_per_f_area;  // Power per unit of frequency and area [W/MHz/mm^2]
+    int add;                // Adders model [0] RCA, [1] CLA.
+    int recomp;             // Alpha metrics memory reduction (recomputation) [%]
 
     double tech_scaling;    // Technology scaling factor (65nm as reference)
     int log_ref_bits;       // Reference bitwidth for logic area
@@ -48,6 +52,25 @@ typedef struct bitwidthStruct {
     int extrinsic;          // Extrinsic information
 } Bitwidth;
 
+// Memory Area data structure
+typedef struct memAreaStruct {
+    double in_frame;
+    double alpha;
+    double nii;
+    double extrinsic;
+    double perm;
+    double crossbar;
+    double total;
+} MemArea;
+
+// Logic Area data structure
+typedef struct logAreaStruct {
+    double bmu;
+    double pmu;
+    double sou;
+    double total;
+} logArea;
+
 // Architecture results data structure
 typedef struct architectureDataStruct {
     int radix;                      // Radix-order
@@ -56,11 +79,13 @@ typedef struct architectureDataStruct {
     int WS;                         // Window-Size
     int w;                          // Channel LLRs bitwidth
     double throughput;              // Throughput [Gb/s]
-    double log_area;                // Logic Area [mm^2]
-    double mem_area;                // Memory Area [mm^2]
+    double latency;                 // Latency [us]
+    double power;                   // Power [W]
+    double power_density;           // Power density [W/mm^2]
+    double energy_eff;              // Energy Efficiency [pJ/bit/mm^2]
+    logArea log_area;               // Logic Area [mm^2]
+    MemArea mem_area;               // Memory Area [mm^2]
     double total_area;              // Total Area [mm^2]
-    double log_area_ge;             // Logic Area [GE]
-    double mem_area_ge;             // Memory Area [GE]
     double aeff;                    // Area efficiency [Gb/s/mm^2]
     double throughput_on_area;      // Throughput on a given area [Gb/s]
     int pmap_num;                   // Number of PMAP architectures in the given area

@@ -5,7 +5,7 @@
 // fp: file pointer
 void print_arch_details(ArchData *arch, FILE *fp) {
     // Computing the logic and memory area percentage contributions
-    int log_perc = (int) (double)(arch->log_area / (arch->log_area + arch->mem_area) * 100);
+    int log_perc = (int) (double)(arch->log_area.total / (arch->log_area.total + arch->mem_area.total) * 100);
     int mem_perc = 100 - log_perc;
 
     // Printing the data
@@ -15,8 +15,20 @@ void print_arch_details(ArchData *arch, FILE *fp) {
     fprintf(fp, "WS: %d \n", arch->WS);
     fprintf(fp, "w: %d \n", arch->w);
     fprintf(fp, "Throughput: %.3lf [Gb/s]\n", arch->throughput);
-    fprintf(fp, "Logic Area: %.3lf (%d%c) [mm^2]\n", arch->log_area, log_perc, '%');
-    fprintf(fp, "Memory Area: %.3lf (%d%c) [mm^2]\n", arch->mem_area, mem_perc, '%');
+    fprintf(fp, "Latency: %.3lf [us]\n", arch->latency);
+    fprintf(fp, "Power Dens.: %.3lf [W/mm^2]\n", arch->power_density);
+    fprintf(fp, "Energy Eff.: %.3lf [pJ/bit/mm^2]\n", arch->energy_eff);
+    fprintf(fp, "Logic Area: %.3lf (%d%c) [mm^2]\n", arch->log_area.total, log_perc, '%');
+    fprintf(fp, "\t- BMU: %.3lf [mm^2]\n", arch->log_area.bmu);
+    fprintf(fp, "\t- PMU: %.3lf [mm^2]\n", arch->log_area.pmu);
+    fprintf(fp, "\t- SOU: %.3lf [mm^2]\n", arch->log_area.sou);
+    fprintf(fp, "Memory Area: %.3lf (%d%c) [mm^2]\n", arch->mem_area.total, mem_perc, '%');
+    fprintf(fp, "\t- In. Frame: %.3lf [mm^2]\n", arch->mem_area.in_frame);
+    fprintf(fp, "\t- Alpha: %.3lf [mm^2]\n", arch->mem_area.alpha);
+    fprintf(fp, "\t- Extrinsic: %.3lf [mm^2]\n", arch->mem_area.extrinsic);
+    fprintf(fp, "\t- NII: %.3lf [mm^2]\n", arch->mem_area.nii);
+    fprintf(fp, "\t- Crossbar: %.3lf [mm^2]\n", arch->mem_area.crossbar);
+    fprintf(fp, "\t- Permutation: %.3lf [mm^2]\n", arch->mem_area.perm);
     fprintf(fp, "Area Efficiency: %.3lf [Gb/s/mm^2]\n", arch->aeff);
 }
 
@@ -58,10 +70,10 @@ void save_dataset(ArchData arch[], int arch_num, char filename[], char open_opti
     int i;
 
     fp = fopen(filename, open_option);
-    fprintf(fp, "Radix, K, Kp, WS, w, th, tot_area, aeff, th_on_area, pmap_num\n");
+    fprintf(fp, "radix,K,Kp,WS,w,throughput,latency,power,power_density,tot_area,aeff,th_on_area,pmap_num\n");
     for (i = 0; i < arch_num; i++) {
         // Print order: <Radix, K, Kp, WS, w, th, tot_area, aeff, th_on_area, pmap_num>
-        fprintf(fp, "%d,%d,%d,%d,%d,%lf,%lf,%lf,%lf,%d\n", arch[i].radix, arch[i].K, arch[i].Kp, arch[i].WS, arch[i].w, arch[i].throughput, arch[i].total_area, arch[i].aeff, arch[i].throughput_on_area, arch[i].pmap_num);
+        fprintf(fp, "%d,%d,%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%d\n", arch[i].radix, arch[i].K, arch[i].Kp, arch[i].WS, arch[i].w, arch[i].throughput, arch[i].latency, arch[i].power, arch[i].power_density, arch[i].total_area, arch[i].aeff, arch[i].throughput_on_area, arch[i].pmap_num);
     }
 
     fclose(fp);

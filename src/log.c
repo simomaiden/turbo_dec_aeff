@@ -29,7 +29,6 @@ void compute_bitwidth(Bitwidth *bitwidth, Param *p) {
 
         bitwidth->branch = p->w + 4;
         bitwidth->state = (int) ceil(log2( (double) 2*delta_sm + delta_g + 1) + 1);
-
     }
     else {
         delta_g = 8 * pow(2, p->w);
@@ -39,10 +38,19 @@ void compute_bitwidth(Bitwidth *bitwidth, Param *p) {
     }
 }
 
-// bitwidth: ptr to bitwidth data structure
-// p: ptr to model parameters data structure
-double get_throughput(Bitwidth *bitwidth, Param *p) {
-    double throughput = 0;
+// Estimated area increment factor from RCA to CLA on n-bits
+double compute_CLA_area_increment_factor(int n) {
+    return (double)((1.0/6*pow(n, 3) + pow(n, 2) + 35.0/6*n) / (9*n));
+}
+
+// Estimated clock frequency increment factor from RCA to CLA on n-bits.
+double comput_CLA_frequency_increment_factor(int n) {
+    return (3*n-1) / (4 + 2*log2(n+1));
+}
+
+double get_frequency(Bitwidth *bitwidth, Param *p) {
+    double frequency;
+    double f_incr_cla = 1;
     double cp_incr_rad4 = 1;
     double cp_incr_rad8 = 1;
     double cp_incr_rad16 = 1;
@@ -66,20 +74,72 @@ double get_throughput(Bitwidth *bitwidth, Param *p) {
         cp_incr_rad16 = 1;
     }
 
+    if (p->add == 1) {
+        f_incr_cla = comput_CLA_frequency_increment_factor(bitwidth->state);
+    }
+
     if (p->radix == 2) {
-        throughput = (double) p->K / (p->Kp+p->WS) * p->f/p->n_hi/cp_scaling;
+        frequency = (double)p->f/cp_scaling;
     }
     else if (p->radix == 4) {
-        throughput = (double) 2 * p->K / (p->Kp+p->WS) * p->f/p->n_hi/cp_scaling/cp_incr_rad4;
+        frequency = (double)p->f/cp_scaling/cp_incr_rad4;
     }
     else if (p->radix == 8) {
-        throughput = (double) 3 * p->K / (p->Kp+p->WS) * p->f/p->n_hi/cp_scaling/cp_incr_rad8;
+        frequency = (double)p->f/cp_scaling/cp_incr_rad8;
     }
     else {
-        throughput = (double) 4 * p->K / (p->Kp+p->WS) * p->f/p->n_hi/cp_scaling/cp_incr_rad16;
+        frequency = (double)p->f/cp_scaling/cp_incr_rad16;
+    }
+
+    frequency *= f_incr_cla;
+
+    return frequency;
+}
+
+// bitwidth: ptr to bitwidth data structure
+// p: ptr to model parameters data structure
+double get_throughput(Bitwidth *bitwidth, Param *p) {
+    double throughput;
+    double frequency;
+
+    frequency = get_frequency(bitwidth, p);
+
+    if (p->radix == 2) {
+        throughput = (double) p->K / (p->Kp+p->WS) * (int)frequency / p->n_hi;
+    }
+    else if (p->radix == 4) {
+        throughput = (double) 2 * p->K / (p->Kp+p->WS) * frequency / p->n_hi;
+    }
+    else if (p->radix == 8) {
+        throughput = (double) 3 * p->K / (p->Kp+p->WS) * frequency / p->n_hi;
+    }
+    else {
+        throughput = (double) 4 * p->K / (p->Kp+p->WS) * frequency / p->n_hi;
     }
 
     return throughput;
+}
+
+double get_latency(Bitwidth *bitwidth, Param *p) {
+    double latency;
+    double frequency;
+
+    frequency = get_frequency(bitwidth, p);
+
+    if (p->radix == 2) {
+        latency = (double) p->n_hi * (p->Kp+p->WS) * 1/frequency;
+    }
+    else if (p->radix == 4) {
+        latency = (double) p->n_hi * (p->Kp+p->WS)/2 * 1/frequency;
+    }
+    else if (p->radix == 8) {
+        latency = (double) p->n_hi * (p->Kp+p->WS)/3 * 1/frequency;
+    }
+    else {
+        latency = (double) p->n_hi * (p->Kp+p->WS)/4 * 1/frequency;
+    }
+
+    return latency;
 }
 
 // p: ptr to model parameters data structure
@@ -149,7 +209,7 @@ double get_pmu_ge(Param *p) {
                 GE_value = 96 * p->GE_rca + 88 * p->GE_cs2;
             }
             else {
-                // TEMPORARY: Max-Log-MAP IMPLEMENTATION
+                // TEMPORARY: Max-Log-MAP radix-16 IMPLEMENTATION (data not available)
                 GE_value = 8 * (8*p->GE_rca+1*p->GE_cs8_f) - 1*p->GE_rca;
             }
     }
@@ -196,37 +256,70 @@ double get_sou_ge(Param *p) {
 }
 
 // bitwidth: ptr to bitwidth data structure
-// p: ptr to model parameters data structure
-double get_siso_log_ge_area(Bitwidth *bitwidth, Param *p) {
+// p: ptr to model parameters data structureù
+// log: ptr to logic area data structure (collecting informations if needed)
+double get_siso_log_ge_area(Bitwidth *bitwidth, Param *p, logArea *log) {
     double siso_ge_area;
+    double bmu_area_incr_cla = 1;
+    double pmu_area_incr_cla = 1;
+    double sou_area_incr_cla = 1;
     double bmu_scaling = (double) bitwidth->branch / p->log_ref_bits;
     double pmu_scaling = (double) bitwidth->state / p->log_ref_bits;
     double sou_scaling = pmu_scaling;
 
-    double bmu_area = 2 * get_bmu_ge(p) * bmu_scaling;
+    if (p->add == 1) {
+        bmu_area_incr_cla = compute_CLA_area_increment_factor(bitwidth->branch);
+        pmu_area_incr_cla = compute_CLA_area_increment_factor(bitwidth->state);
+        sou_area_incr_cla = compute_CLA_area_increment_factor(bitwidth->extrinsic);
+    }
+
+    double bmu_area = 2 * get_bmu_ge(p) * bmu_scaling * bmu_area_incr_cla;
     double pmu_area;
-    double sou_area = get_sou_ge(p) * sou_scaling;
+    double sou_area = get_sou_ge(p) * sou_scaling * sou_area_incr_cla;
 
     // MAX-Log-MAP
     if (p->algorithm == 0) {
-        pmu_area = 2 * get_pmu_ge(p) * pmu_scaling;
+        if (p->recomp > 0)
+            pmu_area = 3 * get_pmu_ge(p) * pmu_scaling;
+        else
+            pmu_area = 2 * get_pmu_ge(p) * pmu_scaling;
     }
     // Local-SOVA
     else if (p->algorithm == 1) {
         // Just the backward PMU is different
-        pmu_area = get_pmu_ge(p) * pmu_scaling;
+        if (p->recomp > 0)
+           pmu_area = 2 * get_pmu_ge(p) * pmu_scaling; 
+        else
+            pmu_area = get_pmu_ge(p) * pmu_scaling;
         p->algorithm = 0;
         pmu_area += get_pmu_ge(p) * pmu_scaling;
         p->algorithm = 1;
     }
 
+    pmu_area *= pmu_area_incr_cla;
+
     siso_ge_area = bmu_area + pmu_area + sou_area;
-    
+
+    if (log != NULL) {
+        log->bmu = bmu_area * p->ge_area / 1e6;
+        log->pmu = pmu_area * p->ge_area / 1e6;
+        log->sou = sou_area * p->ge_area / 1e6;
+    } 
     return siso_ge_area;
 }
 
 // bitwidth: ptr to bitwidth data structure
 // p: ptr to model parameters data structure
-double get_turbo_log_ge_area(Bitwidth *bitwidth, Param *p) {
-    return (double) p->K / p->Kp * get_siso_log_ge_area(bitwidth, p);
+// log: ptr to logic area data structure (collecting informations if needed)
+double get_turbo_log_ge_area(Bitwidth *bitwidth, Param *p, logArea *log) {
+    double total_area = (double) p->K / p->Kp * get_siso_log_ge_area(bitwidth, p, NULL) * p->ge_area / 1e6;
+
+    if (log != NULL) {
+        get_siso_log_ge_area(bitwidth, p, log);
+        log->bmu *= p->K / p->Kp;
+        log->pmu *= p->K / p->Kp;
+        log->sou *= p->K / p->Kp;
+        log->total = total_area;
+    }
+    return total_area;
 }

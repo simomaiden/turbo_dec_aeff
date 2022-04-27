@@ -1,0 +1,121 @@
+/// BEST RADIX-ORDER ANALYSIS ///
+
+-----------------------------------
+Radix	Aeff [Gb/s/mm^2]
+2		1.274
+4		1.272
+8		0.615
+16		0.449
+-----------------------------------
+
+/// DETAILS ///
+
+-----------------------------------
+Radix: 2 
+K: 6144 
+Kp: 256 
+WS: 32 
+w: 6 
+Throughput: 3.056 [Gb/s]
+Latency: 2.011 [us]
+Power Dens.: 1.375 [W/mm^2]
+Energy Eff.: 450.000 [pJ/bit/mm^2]
+Logic Area: 0.505 (21%) [mm^2]
+	- BMU: 0.015 [mm^2]
+	- PMU: 0.339 [mm^2]
+	- SOU: 0.151 [mm^2]
+Memory Area: 1.893 (79%) [mm^2]
+	- In. Frame: 0.281 [mm^2]
+	- Alpha: 0.925 [mm^2]
+	- Extrinsic: 0.129 [mm^2]
+	- NII: 0.231 [mm^2]
+	- Crossbar: 0.069 [mm^2]
+	- Permutation: 0.258 [mm^2]
+Area Efficiency: 1.274 [Gb/s/mm^2]
+-----------------------------------
+
+
+-----------------------------------
+Radix: 4 
+K: 6144 
+Kp: 256 
+WS: 32 
+w: 6 
+Throughput: 4.494 [Gb/s]
+Latency: 1.367 [us]
+Power Dens.: 1.011 [W/mm^2]
+Energy Eff.: 225.000 [pJ/bit/mm^2]
+Logic Area: 1.634 (46%) [mm^2]
+	- BMU: 0.130 [mm^2]
+	- PMU: 1.181 [mm^2]
+	- SOU: 0.323 [mm^2]
+Memory Area: 1.900 (54%) [mm^2]
+	- In. Frame: 0.368 [mm^2]
+	- Alpha: 0.462 [mm^2]
+	- Extrinsic: 0.163 [mm^2]
+	- NII: 0.231 [mm^2]
+	- Crossbar: 0.275 [mm^2]
+	- Permutation: 0.400 [mm^2]
+Area Efficiency: 1.272 [Gb/s/mm^2]
+-----------------------------------
+
+
+-----------------------------------
+Radix: 8 
+K: 6144 
+Kp: 256 
+WS: 32 
+w: 6 
+Throughput: 3.969 [Gb/s]
+Latency: 1.548 [us]
+Power Dens.: 0.595 [W/mm^2]
+Energy Eff.: 150.000 [pJ/bit/mm^2]
+Logic Area: 3.757 (58%) [mm^2]
+	- BMU: 0.768 [mm^2]
+	- PMU: 2.297 [mm^2]
+	- SOU: 0.692 [mm^2]
+Memory Area: 2.691 (42%) [mm^2]
+	- In. Frame: 0.420 [mm^2]
+	- Alpha: 0.347 [mm^2]
+	- Extrinsic: 0.600 [mm^2]
+	- NII: 0.231 [mm^2]
+	- Crossbar: 0.619 [mm^2]
+	- Permutation: 0.474 [mm^2]
+Area Efficiency: 0.615 [Gb/s/mm^2]
+-----------------------------------
+
+
+-----------------------------------
+Radix: 16 
+K: 6144 
+Kp: 256 
+WS: 32 
+w: 6 
+Throughput: 5.198 [Gb/s]
+Latency: 1.182 [us]
+Power Dens.: 0.585 [W/mm^2]
+Energy Eff.: 112.500 [pJ/bit/mm^2]
+Logic Area: 8.317 (71%) [mm^2]
+	- BMU: 3.690 [mm^2]
+	- PMU: 2.833 [mm^2]
+	- SOU: 1.794 [mm^2]
+Memory Area: 3.257 (29%) [mm^2]
+	- In. Frame: 0.450 [mm^2]
+	- Alpha: 0.252 [mm^2]
+	- Extrinsic: 0.607 [mm^2]
+	- NII: 0.252 [mm^2]
+	- Crossbar: 1.100 [mm^2]
+	- Permutation: 0.595 [mm^2]
+Area Efficiency: 0.449 [Gb/s/mm^2]
+-----------------------------------
+
+
+/// RELIABILITY RESULTS ///
+
+-----------------------------------
+Radix	% Cases
+2		51.91
+4		48.09
+8		0.00
+16		0.00
+-----------------------------------

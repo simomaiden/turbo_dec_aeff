@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
     save_dataset(multiple_arch, total_architectures, p.m_filename, "w");
 
     // Custom data analysis
-    //avg_area_th_increment_factors(bitwidths, &expl_p, &p);
+    //avg_increment_factors(bitwidths, &expl_p, &p);
     
     return 0;
 }

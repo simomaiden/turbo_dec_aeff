@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "param.h"
 #include "mem.h"
 #include <math.h>
@@ -66,7 +67,7 @@ double get_crossbar_ge_area(int banks_num, Bitwidth *bitwidth, Param *p) {
     return ((double)bitwidth->extrinsic/p->crbar_ref_bits) * p->GE_crbar * pow(((double)banks_num/p->banks_ref), 2);
 }
 
-double get_turbo_mem_ge_area(Bitwidth *bitwidth, Param *p) {
+double get_turbo_mem_ge_area(Bitwidth *bitwidth, Param *p, MemArea *mem) {
     double ge_area;
     int n_siso = (int) ceil((double) p->K / p->Kp);
 
@@ -75,6 +76,9 @@ double get_turbo_mem_ge_area(Bitwidth *bitwidth, Param *p) {
     int extr_p = n_siso;
     int alpha_p = n_siso;
     int nii_p = n_siso;
+
+    // Number of words per memory partition (permutation memory)
+    int perm_words_p = p->Kp+p->WS;  // It is latency related
 
     // Effect of the Forward-Backward Scheduling on local memories
     alpha_p *= 2;
@@ -87,15 +91,21 @@ double get_turbo_mem_ge_area(Bitwidth *bitwidth, Param *p) {
     else if (p->radix == 4) {
         in_frame_p *= 4;
         extr_p *= 6;
+        perm_words_p /= 2;
     }
     else if (p->radix == 8) {
         in_frame_p *= 6;
         extr_p *= 9;
+        perm_words_p /= 3;
     }
     else {
         in_frame_p *= 8;
         extr_p *= 12;
+        perm_words_p /= 4;
     }
+
+    int perm_p = extr_p;
+    int perm_bitwidth = (int) floor(log2(extr_p)+1);
 
     // Number of words per memory partition
     int in_frame_words_p = (int) ceil( (double) get_in_frame_words(p) / in_frame_p);
@@ -108,19 +118,34 @@ double get_turbo_mem_ge_area(Bitwidth *bitwidth, Param *p) {
     double ge_extr_inf = get_ge_bit(extr_words_p, p);
     double ge_alpha = get_ge_bit(alpha_words_p, p);
     double ge_nii = get_ge_bit(nii_words_p, p);
+    double ge_perm = get_ge_bit(perm_words_p, p);
 
     // Area computation: words/partition * partitions * word bitwidth * GE/bit
     double ge_in_frame_area = (in_frame_words_p*in_frame_p) * 3*bitwidth->channel * ge_in_frame;
     double ge_extr_inf_area = (extr_words_p*extr_p) * bitwidth->extrinsic * ge_extr_inf;
     double ge_alpha_area = (alpha_words_p*alpha_p) * 8*bitwidth->state * ge_alpha;
     double ge_nii_area = (nii_words_p*nii_p) * 8*bitwidth->state * ge_nii;
+    double ge_perm_area = (perm_words_p*perm_p) * perm_bitwidth * ge_perm;
+
+    // Recomputation alpha memory reduction
+    ge_alpha_area *= (double)((100.0 - p->recomp)/100);
 
     // Crossbar area estimation
     double ge_crossbar = get_crossbar_ge_area(extr_p, bitwidth, p);
 
     // Total area estimation
-    ge_area = ge_in_frame_area + ge_extr_inf_area + ge_alpha_area + ge_nii_area + ge_crossbar;
+    ge_area = ge_in_frame_area + ge_extr_inf_area + ge_alpha_area + ge_nii_area + ge_crossbar + ge_perm_area;
 
-    return ge_area;
+    if (mem != NULL) {
+        mem->in_frame = ge_in_frame_area * p->ge_area / 1e6;
+        mem->alpha = ge_alpha_area * p->ge_area / 1e6;
+        mem->extrinsic = ge_extr_inf_area * p->ge_area / 1e6;
+        mem->nii = ge_nii_area * p->ge_area / 1e6;
+        mem->crossbar = ge_crossbar * p->ge_area / 1e6;
+        mem->perm = ge_perm_area * p->ge_area / 1e6;
+        mem->total = ge_area * p->ge_area / 1e6;
+    }
+
+    return ge_area * p->ge_area / 1e6;
 }
 
